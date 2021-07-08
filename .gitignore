@@ -1,3 +1,8 @@
+# Sensitive Files
+*.db
+*.json
+*.log
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
