@@ -15,7 +15,8 @@ TOKEN = 3
 
 # Class Instances
 sha3 = hashlib.sha3_256()
-bot = commands.Bot("!", help_command=None)
+intents = discord.Intents.all()
+bot = commands.Bot("!", help_command=None, intents=intents)
 config = load_config()
 db = DB("users.db")
 web = HTML_Parser(config)
@@ -80,6 +81,13 @@ async def change_user_nickname(user, nickname):
     member = await guild.fetch_member(user)
     await member.edit(nick=nickname)
 
+async def user_has_role(user_id, role_id):
+    guild = await bot.fetch_guild(config["server_id"])
+    member = await guild.fetch_member(user_id)
+    for role in member.roles:
+        if role.id == role_id:
+            return True
+    return False
 
 # ----------------------------------------------------------------------
 # Bot Events
@@ -111,9 +119,13 @@ async def on_reaction_add(reaction, user):
 
 @bot.event
 async def on_member_join(member):
-    #await send_info_message(member)
-    pass
+    await send_info_message(member)
+    await member.send("**Note:** If you are not interested in running this content with us you can ignore this message.")
 
+@bot.event
+async def on_ready():
+    print("Running.")
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="all the logs - Rawr!"))
 
 # ----------------------------------------------------------------------
 # Bot Commands
@@ -125,6 +137,9 @@ async def role(ctx, role, fflogs_url):
     user = db.create_or_get_user(ctx.message.author.id)
 
     if role == "drs":
+        if await user_has_role(user[ID], config["roles"][role]):
+            await ctx.send("You already have the DRS role!")
+            return
         # Parse HTML of Logs
         await ctx.send("Checking provided logs.\nThis may take some seconds.")
         status_code, data = web.get_log_data(fflogs_url, str(user[NAME]))
@@ -206,3 +221,4 @@ async def help(ctx):
 # Run Bot
 # ----------------------------------------------------------------------
 bot.run(config["token"])
+

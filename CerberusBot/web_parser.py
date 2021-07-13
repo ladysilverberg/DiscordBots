@@ -2,6 +2,7 @@ import re
 import requests
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
+from selenium.webdriver import FirefoxOptions
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
@@ -13,7 +14,7 @@ Responsible for parsing the HTML of Lodestone and FFLogs.
 """
 class HTML_Parser():
     lodestone_regex = "^(https:\/\/)(eu|na)\.finalfantasyxiv.com/lodestone/character/([0-9]{6,10})\/$"
-    fflogs_regex = "^(https:\/\/)www.fflogs.com/reports/([a-zA-Z0-9]+)/#fight=(last|[0-9]{1,2})"
+    fflogs_regex = "^(https:\/\/)www.fflogs.com/reports/([a-zA-Z0-9]+)[\/]?#fight=(last|[0-9]{1,2})"
 
     def __init__(self, config):
         self.config = config
@@ -53,7 +54,9 @@ class HTML_Parser():
         fflogs_url = regex_result.group()
 
         # Run the fight summary page through Selenium to get the HTML contents rendered by JavaScript
-        driver = webdriver.Firefox(executable_path=self.config["gecko_driver_path"])
+        opts = FirefoxOptions()
+        opts.add_argument("--headless")
+        driver = webdriver.Firefox(executable_path=self.config["gecko_driver_path"], firefox_options=opts)
         driver.get(fflogs_url+"&type=summary")
         try:
             ep = EC.presence_of_element_located((By.ID, "summary-damage-done-0"))
